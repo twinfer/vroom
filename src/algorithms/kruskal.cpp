@@ -28,30 +28,40 @@ UndirectedGraph<T> minimum_spanning_tree(const UndirectedGraph<T>& graph) {
   std::vector<Edge<T>> mst;
   mst.reserve(graph.size() - 1);
 
-  // During Kruskal algorithm, the number of connected components will
-  // decrease until we obtain a single component (the final tree). We
-  // use the smallest vertex as a representative of connected
-  // components.
-  std::vector<Index> representative(graph.size());
-  std::iota(representative.begin(), representative.end(), 0);
+  // Union-Find data structure with path compression and union by rank.
+  std::vector<Index> parent(graph.size());
+  std::iota(parent.begin(), parent.end(), 0);
+  std::vector<Index> rank(graph.size(), 0);
+
+  auto find = [&](Index i) {
+    Index root = i;
+    while (root != parent[root]) {
+      root = parent[root];
+    }
+    while (i != root) {
+      Index next = parent[i];
+      parent[i] = root;
+      i = next;
+    }
+    return root;
+  };
 
   for (const auto& edge : edges) {
     const Index first_vertex = edge.get_first_vertex();
     const Index second_vertex = edge.get_second_vertex();
 
-    const Index first_rep = representative[first_vertex];
-    const Index second_rep = representative[second_vertex];
-    if (first_rep != second_rep) {
-      // Adding current edge won't create a cycle as vertices are in
-      // separate connected components.
+    const Index root_first = find(first_vertex);
+    const Index root_second = find(second_vertex);
+
+    if (root_first != root_second) {
       mst.push_back(edge);
-      // Both vertices are now in the same connected component,
-      // setting new representative for all elements of second
-      // component. Relies on first_vertex < second_vertex (see edge
-      // ctor).
-      for (auto& e : representative) {
-        if (e == second_rep) {
-          e = first_rep;
+      
+      if (rank[root_first] < rank[root_second]) {
+        parent[root_first] = root_second;
+      } else {
+        parent[root_second] = root_first;
+        if (rank[root_first] == rank[root_second]) {
+          rank[root_first]++;
         }
       }
     }
