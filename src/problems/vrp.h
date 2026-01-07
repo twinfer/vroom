@@ -13,6 +13,7 @@ All rights reserved (see LICENSE).
 #include <algorithm>
 #include <mutex>
 #include <numeric>
+#include <semaphore>
 #include <ranges>
 #include <set>
 #include <thread>
